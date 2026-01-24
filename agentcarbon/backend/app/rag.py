@@ -6,6 +6,7 @@ import uuid
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load .env from project root (final_year_project/.env)
 # rag.py is at: final_year_project/agentcarbon/backend/app/rag.py
@@ -67,10 +68,32 @@ def get_history(limit: int = 12) -> List[Dict]:
     )
     history: List[Dict] = []
     for p in points:
+        fields = p.payload.get("fields", {})
+        emissions = p.payload.get("emissions", {})
         history.append(
             {
-                "fields": p.payload.get("fields", {}),
-                "emissions": p.payload.get("emissions", {}),
+                "date": fields.get("date"),
+                "total_kgco2": emissions.get("total_kgco2"),
             }
         )
+    
+    # Sort by date (parse dates and sort chronologically)
+    def parse_date(date_str):
+        if not date_str:
+            return datetime.min
+        try:
+            # Try common date formats
+            for fmt in ["%Y-%m-%d", "%Y/%m/%d", "%m/%d/%Y", "%d/%m/%Y", "%Y-%m-%dT%H:%M:%S", "%d-%b-%Y", "%d-%m-%Y"]:
+                try:
+                    return datetime.strptime(date_str, fmt)
+                except ValueError:
+                    continue
+            # If no format matches, return min date
+            return datetime.min
+        except (TypeError, AttributeError):
+            return datetime.min
+    
+    # Sort by parsed date
+    history.sort(key=lambda x: parse_date(x.get("date")))
+    
     return history

@@ -11,7 +11,8 @@ SYSTEM_PROMPT = (
     "suggestions to reduce emissions. Do not change any numeric values."
 )
 
-def generate_explanation(fields: dict, emissions: dict, history: list) -> str:
+
+def generate_explanation(fields: dict, emissions: dict, history: list) -> str | None:
     user_msg = (
         f"Current fields: {fields}\n"
         f"Current emissions: {emissions}\n"
@@ -30,7 +31,12 @@ def generate_explanation(fields: dict, emissions: dict, history: list) -> str:
         "stream": False,
     }
 
-    resp = requests.post(OLLAMA_URL, json=payload, timeout=120)
-    resp.raise_for_status()
-    data = resp.json()
-    return data["message"]["content"].strip()
+    try:
+        # No timeout argument -> waits indefinitely until Ollama responds
+        resp = requests.post(OLLAMA_URL, json=payload)
+        resp.raise_for_status()
+        data = resp.json()
+        return data["message"]["content"].strip()
+    except Exception as exc:
+        print(f"❌ LLM Error: {exc}")
+        return None

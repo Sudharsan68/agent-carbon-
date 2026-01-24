@@ -5,14 +5,44 @@ from datetime import datetime
 from typing import Dict, Optional
 
 
+def _clean_text(text: str) -> str:
+    """
+    Fix common PDF extraction artifacts:
+    - Merge broken numbers like '1 , 250' -> '1,250'
+    - Light keyword cleanup (Date, Energy, Cons)
+    """
+    text = re.sub(r"Da\s+te", "Date", text, flags=re.IGNORECASE)
+    text = re.sub(r"Ener\s+gy", "Energy", text, flags=re.IGNORECASE)
+    text = re.sub(r"C\s+ons", "Cons", text, flags=re.IGNORECASE)
+    # Remove spaces around commas/dots in numbers: "1 , 250" -> "1,250"
+    text = re.sub(r"(\d)\s*([,.])\s*(\d)", r"\1\2\3", text)
+    return text
+
+
 def _num(pattern: str, text: str) -> Optional[float]:
+    # Try the provided pattern first
     m = re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE)
-    if not m:
-        return None
-    try:
-        return float(m.group(1).replace(",", ""))
-    except ValueError:
-        return None
+    if m:
+        try:
+            # clean "1 , 250" -> "1250"
+            val = m.group(1).replace(" ", "").replace(",", "")
+            return float(val)
+        except ValueError:
+            pass
+            
+    # Fallback: aggressive search for numbers with spaces/commas near keywords
+    # This specifically targets broken OCR numbers like "1 , 2 5 0 . 00"
+    # It looks for a sequence of digits/commas/dots/spaces
+    match = re.search(r"(\d[\d,\.\s]*\d)", text)
+    if match:
+         try:
+            val = match.group(1).replace(" ", "").replace(",", "")
+            return float(val)
+         except ValueError:
+            pass
+            
+    return None
+
 
 
 def _find_first_match(patterns, text: str):
@@ -28,8 +58,9 @@ def extract_fields(raw_text: str, image_bytes: bytes | None = None) -> Dict:
     Current implementation: regex-only, robust version.
     (LayoutLM can be added later; for now image_bytes is ignored.)
     """
-    lines = [l.strip() for l in raw_text.splitlines() if l.strip()]
-    text = raw_text
+    cleaned = _clean_text(raw_text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    text = cleaned
 
     fields: Dict = {
         "energy_kwh": None,
@@ -43,11 +74,13 @@ def extract_fields(raw_text: str, image_bytes: bytes | None = None) -> Dict:
 
     # --- quantities ---
     fields["energy_kwh"] = _num(
-        r"(?:electric(?:ity)?(?:\s+usage)?[:\s]+)(\d+(?:\.\d+)?)\s*kwh", text
-    ) or _num(r"(\d+(?:\.\d+)?)\s*kwh", text)
+        # Allow spaces between digits, commas, and dots
+        r"(?:Energy\s+Cons|Electric(?:ity)?(?:\s+usage)?)[^0-9]*([\d\s,]+(?:\.\d+)?)",
+        text,
+    )
 
     fields["water_gallons"] = _num(
-        r"(?:water(?:\s+usage)?[:\s]+)(\d+(?:\.\d+)?)\s*(?:gallons?|gal)", text
+        r"(?:water(?:\s+usage)?[:\s]+)([\d,]+(?:\.\d+)?)\s*(?:gallons?|gal)", text
     )
 
     fields["gas_therms"] = _num(
@@ -89,6 +122,7 @@ def extract_fields(raw_text: str, image_bytes: bytes | None = None) -> Dict:
             r"invoice\s+date[:\s]+(\d{1,2}/\d{1,2}/\d{2,4})",
             r"date[:\s]+([A-Za-z]+\s+\d{1,2},\s*\d{4})",
             r"date[:\s]+(\d{1,2}-\d{1,2}-\d{2,4})",
+            r"date[:\s]+(\d{1,2}\s*-\s*[A-Za-z]+\s*-\s*\d{4})",
         ],
         text,
     )

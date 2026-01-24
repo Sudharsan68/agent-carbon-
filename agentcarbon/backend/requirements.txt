@@ -7,8 +7,9 @@ python-dotenv
 pytesseract
 Pillow
 opencv-python
-paddlepaddle
-paddleocr
+# paddlepaddle
+# paddleocr
+PyPDF2
 
 transformers
 torch

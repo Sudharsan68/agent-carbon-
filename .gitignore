@@ -49,3 +49,5 @@ Thumbs.db
 # Project specific
 *.log
 .cache/
+
+agentcarbon/backend/data/household_power_consumption.txt
