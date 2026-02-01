@@ -1,12 +1,62 @@
+import joblib
 from typing import List, Dict
 import pandas as pd
 from prophet import Prophet
+from pathlib import Path
 import warnings
 from datetime import datetime
 
+
+# Path to the model you trained in train_predictor.py
+MODEL_PATH = Path("data/predictor_model.pkl")
+
+
+def predict_usage_impact(kwh: float, gas: float, water: float, date_str: str):
+    """
+    Uses the TRAINED Random Forest model to predict CO2 based on consumption.
+    This is your 'Usage Intelligence'.
+    """
+    if not MODEL_PATH.exists():
+        return None
+
+    try:
+        # Load the saved model and features
+        saved_data = joblib.load(MODEL_PATH)
+        model = saved_data["model"]
+        feature_cols = saved_data["feature_cols"]
+
+        # Prepare features
+        dt = pd.to_datetime(date_str)
+        month = dt.month
+        year = dt.year
+        
+        # Create input row matching the training format
+        input_df = pd.DataFrame([{
+            "electricity_kwh": kwh,
+            "gas_therms": gas,
+            "water_gallons": water,
+            "month": month,
+            "year": year,
+            "is_winter": 1 if month in [12, 1, 2] else 0,
+            "is_summer": 1 if month in [4, 5, 6] else 0
+        }])
+
+        prediction = model.predict(input_df[feature_cols])
+        return round(float(prediction[0]), 2)
+    except Exception as e:
+        print(f"ML Prediction Error: {e}")
+        return None
+
+
 def forecast_next_month(history: List[Dict]) -> Dict:
-    """Generate forecast for next month using Prophet."""
+    """
+    Uses PROPHET to forecast next month based on history.
+    This is your 'Time-Series Forecasting'.
+    """
     rows = []
+    if not history:
+        return {"predicted_kgco2": None}
+        
     for h in history:
         date = h.get("date")
         total = h.get("total_kgco2")

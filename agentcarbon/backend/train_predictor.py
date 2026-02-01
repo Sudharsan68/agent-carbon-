@@ -74,10 +74,10 @@ def main():
     rmse = np.sqrt(mse)
     r2 = r2_score(y_test, y_pred)
 
-    print(f"✅ Training complete.")
+    print(f"[SUCCESS] Training complete.")
     print(f"MAE:  {mae:.4f} kg CO2")
     print(f"RMSE: {rmse:.4f} kg CO2")
-    print(f"R²:   {r2:.4f} (1.0 = perfect)")
+    print(f"R2:   {r2:.4f} (1.0 = perfect)")
 
 
 
@@ -85,7 +85,7 @@ def main():
     # 6. Save model
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump({"model": model, "feature_cols": feature_cols}, MODEL_PATH)
-    print(f"💾 Model saved to {MODEL_PATH}")
+    print(f"[SAVED] Model saved to {MODEL_PATH}")
 
 if __name__ == "__main__":
     main()

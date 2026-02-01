@@ -8,17 +8,35 @@ SYSTEM_PROMPT = (
     "You are AgentCarbon, an expert sustainability assistant. "
     "You receive extracted invoice fields and carbon emissions. "
     "Explain the results in simple English and give 2–3 specific, practical "
-    "suggestions to reduce emissions. Do not change any numeric values."
+    "suggestions to reduce emissions. Do not change any numeric values. "
+    "Output EXTREMELY CLEAN PLAIN TEXT ONLY. Do not use asterisks (**), bolding, or markdown formatting."
 )
 
 
-def generate_explanation(fields: dict, emissions: dict, history: list) -> str | None:
+def generate_explanation(
+    fields: dict, 
+    emissions: dict, 
+    history: list, 
+    ml_predicted_co2: float | None = None
+) -> str | None:
+    
+    calculated_co2 = emissions.get("total_kgco2", "N/A")
+    
+    ml_context = ""
+    if ml_predicted_co2 is not None:
+        ml_context = (
+            f"The calculated emissions are {calculated_co2}, but the ML model suggests {ml_predicted_co2}. "
+            "Briefly explain why there might be a difference (e.g., seasonal factors or typical consumption patterns for this facility). "
+        )
+
     user_msg = (
         f"Current fields: {fields}\n"
         f"Current emissions: {emissions}\n"
+        f"ML Predicted CO2: {ml_predicted_co2}\n"
         f"Past records (may be empty): {history}\n\n"
         "1) Briefly summarize this bill's emissions.\n"
         "2) Mention if emissions seem higher or lower than usual based on history.\n"
+        f"{ml_context}\n"
         "3) Give 2–3 concrete tips to reduce future emissions."
     )
 

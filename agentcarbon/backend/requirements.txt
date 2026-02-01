@@ -21,3 +21,10 @@ prophet
 qdrant-client
 numpy
 scikit-learn
+python-jose[cryptography]
+passlib[bcrypt]
+neo4j
+psycopg2-binary
+sqlalchemy
+alembic
+fpdf2
