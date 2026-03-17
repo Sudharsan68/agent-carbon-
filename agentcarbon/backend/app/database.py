@@ -9,12 +9,14 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    # Fallback or error - usually we want to fail fast, but for now lets print a warning
-    print("WARNING: DATABASE_URL not set.")
-    # For now, default to a local user if not set, or leave it empty causing error later
-    # DATABASE_URL = "postgresql://user:password@localhost/agentcarbon"
+    print("WARNING: DATABASE_URL not set. Falling back to local SQLite database.")
+    DATABASE_URL = "sqlite:///./agentcarbon.db"
 
-engine = create_engine(DATABASE_URL)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

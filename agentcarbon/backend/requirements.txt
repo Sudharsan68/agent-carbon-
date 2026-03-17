@@ -1,8 +1,9 @@
 fastapi
 uvicorn[standard]
-pydantic
+pydantic[email]
 python-multipart
 python-dotenv
+requests
 
 pytesseract
 Pillow
@@ -17,12 +18,15 @@ sentencepiece
 
 pandas
 prophet
+joblib
+email-validator
 
 qdrant-client
 numpy
 scikit-learn
 python-jose[cryptography]
 passlib[bcrypt]
+bcrypt==4.0.1
 neo4j
 psycopg2-binary
 sqlalchemy

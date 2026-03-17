@@ -10,10 +10,11 @@ from dotenv import load_dotenv
 from datetime import datetime
 from neo4j import GraphDatabase
 
-# Load .env
+# Load .env (for local dev; in Docker env vars come from docker-compose)
 project_root = Path(__file__).parent.parent.parent.parent
 env_path = project_root / ".env"
-load_dotenv(dotenv_path=env_path)
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
@@ -21,13 +22,18 @@ COLLECTION = "agentcarbon_docs"
 
 # Neo4j Config
 NEO4J_URI = os.getenv("NEO4J_URI")
-NEO4J_USER = os.getenv("NEO4J_USER")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
+NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
 
-if not QDRANT_URL or not QDRANT_API_KEY:
-    print("WARNING: QDRANT_URL or QDRANT_API_KEY not set.")
+if not QDRANT_URL:
+    print("WARNING: QDRANT_URL not set. Defaulting to localhost.")
+    QDRANT_URL = "http://localhost:6333"
 
-client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+# Local Qdrant doesn't need an API key
+if QDRANT_API_KEY:
+    client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+else:
+    client = QdrantClient(url=QDRANT_URL)
 
 neo4j_driver = None
 if NEO4J_URI and NEO4J_USER and NEO4J_PASSWORD:

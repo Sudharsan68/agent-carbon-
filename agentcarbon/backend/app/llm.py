@@ -1,8 +1,9 @@
 # app/llm.py
 import requests
+import os
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
-MODEL_NAME = "llama3"
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434/api/chat")
+MODEL_NAME = "llama3.2-vision:11b"
 
 SYSTEM_PROMPT = (
     "You are AgentCarbon, an expert sustainability assistant. "

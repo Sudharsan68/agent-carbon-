@@ -76,12 +76,7 @@ async def delete_history_item(
             emissions = payload.get("emissions", {})
             
             # Heuristic match for Postgres
-            # We must set schema first
-            from sqlalchemy import text
-            schema_name = f"user_{current_user.id}"
-            db.execute(text(f"SET search_path TO {schema_name}, public"))
-            
-            # Find and delete from Postgres
+            # Find and delete
             # We match on date, facility, and total_kgco2 as a "key"
             date = fields.get("date")
             facility = fields.get("facility_name", "Main Facility")
@@ -124,11 +119,8 @@ async def generate_user_report(
 ):
     try:
         from sqlalchemy import text, func
-        # 1. Force the correct schema
-        schema_name = f"user_{current_user.id}"
-        db.execute(text(f"SET search_path TO {schema_name}, public"))
 
-        # 2. Query REAL data from Postgres WITH FILTER
+        # 2. Query REAL data from DB WITH FILTER
         res_co2 = db.query(func.sum(Emission.total_kgco2)).filter(Emission.user_id == current_user.id).scalar()
         res_kwh = db.query(func.sum(Emission.energy_kwh)).filter(Emission.user_id == current_user.id).scalar()
         

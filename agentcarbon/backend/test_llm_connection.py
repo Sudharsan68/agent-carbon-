@@ -18,7 +18,7 @@ def check_ollama(url="http://localhost:11434"):
         print(f"❌ Error checking Ollama: {e}")
         return False
 
-def check_model(model_name="llama3", url="http://localhost:11434/api/tags"):
+def check_model(model_name="llama3.2-vision:11b", url="http://localhost:11434/api/tags"):
     try:
         print(f"Checking for model '{model_name}'...")
         resp = requests.get(url, timeout=5)
