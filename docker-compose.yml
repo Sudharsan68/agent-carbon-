@@ -4,79 +4,72 @@ services:
   backend:
     build:
       context: ./agentcarbon/backend
-    container_name: agentcarbon_backend
     ports:
       - "8000:8000"
     env_file:
       - .env
     environment:
-      # Override localhost with container names for Docker network
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/agentcarbon
       - NEO4J_URI=bolt://neo4j:7687
       - QDRANT_URL=http://qdrant:6333
-      # Map the host/cloud environment variable directly into the container
       - GROQ_API_KEY=${GROQ_API_KEY}
     depends_on:
       - postgres
       - neo4j
       - qdrant
-    networks:
-      - agentcarbon_network
+    deploy:
+      resources:
+        limits:
+          memory: 300M
 
   frontend:
     build:
       context: ./agentcarbon/frontend/carbon-footprint-insights
-    container_name: agentcarbon_frontend
     ports:
-      - "8080:8080" # From vite.config.ts defaults
+      - "80:8080"
     depends_on:
       - backend
-    networks:
-      - agentcarbon_network
+    deploy:
+      resources:
+        limits:
+          memory: 150M
 
   postgres:
-    image: postgres:15
-    container_name: agentcarbon_postgres
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: agentcarbon
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - agentcarbon_network
+    deploy:
+      resources:
+        limits:
+          memory: 200M
 
   neo4j:
     image: neo4j:5
-    container_name: agentcarbon_neo4j
     environment:
       NEO4J_AUTH: neo4j/password
-    ports:
-      - "7474:7474" # Browser GUI
-      - "7687:7687" # Bolt port
+      NEO4J_dbms_memory_heap_max__size: 256M
+      NEO4J_dbms_memory_pagecache_size: 128M
     volumes:
       - neo4j_data:/data
-    networks:
-      - agentcarbon_network
+    deploy:
+      resources:
+        limits:
+          memory: 300M
 
   qdrant:
     image: qdrant/qdrant
-    container_name: agentcarbon_qdrant
-    ports:
-      - "6333:6333"
-      - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
-    networks:
-      - agentcarbon_network
+    deploy:
+      resources:
+        limits:
+          memory: 200M
 
 volumes:
   postgres_data:
   neo4j_data:
   qdrant_data:
-
-networks:
-  agentcarbon_network:
-    driver: bridge
