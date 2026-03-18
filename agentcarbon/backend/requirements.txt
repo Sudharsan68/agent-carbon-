@@ -7,14 +7,9 @@ requests
 
 pytesseract
 Pillow
-opencv-python
-# paddlepaddle
-# paddleocr
-PyPDF2
 
-transformers
-torch
-sentencepiece
+# [Removed unused transformers, torch, sentencepiece, and opencv-python to reduce bloat]
+PyPDF2
 
 pandas
 prophet

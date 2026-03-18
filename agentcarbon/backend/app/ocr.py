@@ -5,8 +5,11 @@ import PyPDF2
 import pytesseract
 from pytesseract import TesseractNotFoundError
 
-# Point directly to the exe (same as test_ocr.py)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+import os
+
+# Point directly to the exe (same as test_ocr.py) if on Windows locally
+if os.name == 'nt':
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 
 def _extract_pdf_text(content: bytes) -> str:
