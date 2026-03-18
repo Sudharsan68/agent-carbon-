@@ -2,8 +2,11 @@
 import requests
 import os
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434/api/chat")
-MODEL_NAME = "llama3.2-vision:11b"
+# Note: The Groq API URL mirrors the OpenAI endpoint structure
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+# We recommend using the 70B model or 8B model. 
+MODEL_NAME = "llama-3.3-70b-versatile"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 SYSTEM_PROMPT = (
     "You are AgentCarbon, an expert sustainability assistant. "
@@ -20,6 +23,10 @@ def generate_explanation(
     history: list, 
     ml_predicted_co2: float | None = None
 ) -> str | None:
+    
+    if not GROQ_API_KEY:
+        print("❌ Warning: GROQ_API_KEY environment variable is missing!")
+        return "Insight generation currently unavailable: missing LLM configuration."
     
     calculated_co2 = emissions.get("total_kgco2", "N/A")
     
@@ -41,21 +48,31 @@ def generate_explanation(
         "3) Give 2–3 concrete tips to reduce future emissions."
     )
 
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
     payload = {
         "model": MODEL_NAME,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_msg},
         ],
-        "stream": False,
+        "temperature": 0.3,
+        "max_tokens": 512
     }
 
     try:
-        # No timeout argument -> waits indefinitely until Ollama responds
-        resp = requests.post(OLLAMA_URL, json=payload)
+        resp = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=30)
         resp.raise_for_status()
         data = resp.json()
-        return data["message"]["content"].strip()
+        return data["choices"][0]["message"]["content"].strip()
     except Exception as exc:
         print(f"❌ LLM Error: {exc}")
-        return None
+        
+        # Adding a bit more detailed trace for debugging Groq API requests specifically
+        if hasattr(exc, 'response') and exc.response is not None:
+            print(f"Response Body: {exc.response.text}")
+            
+        return "An error occurred while calling the LLM API."
