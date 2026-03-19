@@ -1,0 +1,3 @@
+[submodule "agentcarbon/frontend/carbon-footprint-insights"]
+	path = agentcarbon/frontend/carbon-footprint-insights
+	url = https://github.com/Sudharsan68/carbon-footprint-insights.git
