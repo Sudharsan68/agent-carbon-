@@ -38,9 +38,15 @@ else:
 neo4j_driver = None
 if NEO4J_URI and NEO4J_USER and NEO4J_PASSWORD:
     try:
-        neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        neo4j_driver = GraphDatabase.driver(
+            NEO4J_URI, 
+            auth=(NEO4J_USER, NEO4J_PASSWORD),
+            max_connection_lifetime=200,    # Good for cloud AuraDB dropped packets
+            max_connection_pool_size=50,
+            connection_acquisition_timeout=60.0
+        )
     except Exception as e:
-        print(f"WARNING: Failed to connect to Neo4j: {e}")
+        print(f"WARNING: Failed to connect to Neo4j Cloud: {e}")
 
 
 def _ensure_collection() -> None:
